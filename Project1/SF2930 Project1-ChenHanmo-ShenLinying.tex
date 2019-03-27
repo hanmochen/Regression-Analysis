@@ -1,0 +1,450 @@
+\documentclass[11pt]{article}
+\usepackage{geometry} 
+\usepackage{hyperref}     
+\usepackage{indentfirst} 
+\makeatletter
+\def\UrlAlphabet{%
+      \do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j%
+      \do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t%
+      \do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D%
+      \do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N%
+      \do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X%
+      \do\Y\do\Z}
+\def\UrlDigits{\do\1\do\2\do\3\do\4\do\5\do\6\do\7\do\8\do\9\do\0}
+\g@addto@macro{\UrlBreaks}{\UrlOrds}
+\g@addto@macro{\UrlBreaks}{\UrlAlphabet}
+\g@addto@macro{\UrlBreaks}{\UrlDigits}
+\makeatother
+
+\setlength{\parindent}{2em}
+
+\geometry{a3paper}                 
+\usepackage{graphicx}
+\graphicspath{{/Users/chm/OneDrive/SF2930/Resources/}}
+\usepackage{amssymb, amsmath}
+\usepackage{epstopdf}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{Report I - SF2930 Regression Analysis}
+\author{Chen Hanmo, 990904-T072 \and  Shen Linying, 981208-T066}
+
+\date{9 March, 2019 (Revised on 15 March,2019)}
+
+\hypersetup{
+colorlinks=true,
+linkcolor=black
+}
+
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section*{Project 1}
+
+
+\noindent 
+ {\bf Scenario I:}  Body fat assessment
+
+\vspace{2mm}
+
+
+\section{Introduction}
+
+\subsection{Background} 
+
+The World Health organization (WHO) reported that obesity is a major risk factor for a number of chronic diseases, including diabetes, cardiovascular diseases and cancer. Obesity is defined as "the disease in which excess of body fat has accumulated to such extend that health may be adversely affected". Once being considered as a problem only for high income countries, obesity is now rise in low- and middle-income countries. An important issue for medical purposes is thus is to reliably identify people with the fat excess.
+
+
+\subsection{Goals}
+
+As a major risk for many chronic diseases, obesity can be influenced by many factors including one's age, height and other body indexes. 
+
+In the dataset from \url{http://lib.stat.cmu.edu/datasets/bodyfat}, it uses {\it body fat mass }(BFM) instead of the {\it body mass index}(BMI) as the measure of body fatness and other 13 indexs are included as factors that may influence the fatness.
+
+In this project, we are trying to develop a regression model based on the body dataset and use statistical techniques to modify and validate it.
+\section{Model development} 
+We establish and modify our model following the flow chart[\ref{Fig1}] presented in Montgomery's book. Although our model-building process covers many other aspects, we will mainly focus on the {\bf residual analysis} and {\bf multicollinearity diagnostics} in the following illustration.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.4]{P1P1.png}
+\caption{the model-building process}\label{Fig1}
+\end{figure}
+
+
+\subsection{The full model} \label{ch1}
+
+Firstly, we try to establish the full model with all the columns in the data frame. And the summary of the model is presented as [\ref{Fig2}].
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.4]{P1P2.png}
+\caption{Summary of the full model}\label{Fig2}
+\end{figure}
+
+The original full model is 
+\begin{align}
+	\text{density} = &1.156121-1.319699\times10^{-4} *\text{age }+2.377541\times10^{-4}*\text{weight}\notag\\
+	&-2.594465\times10^{-5}*\text{height}+1.071540\times10^{-3}*\text{neck} +1.168530\times10^{-5}*\text{chest}\notag\\
+	&-2.199601\times10^{-3}*\text{abdomen}+5.267858\times10^{-4}*\text{hip}-6.342697\times10^{-4}*\text{thigh}\notag \\ 
+    &-3.418355\times10^{-5}*\text{knee} -4.448680\times10^{-4}*\text{ankle}-4.273484\times10^{-4}*\text{biceps}\notag\\
+    & -1.040264\times10^{-3}*\text{forearm}+3.651081\times10^{-3}*\text{wrist}\label{eq1}    
+\end{align}
+Based on that result, it can be seen that the full model is not so satisfying. For example, the {\bf R-square} and the {\bf p-value} of many coefficients is not approriate for a validated model and further modification is needed.
+
+
+
+\subsection{Residual Analysis}\label{ch2}
+
+Residual analysis is essential in our model-building to check model adequecy.
+
+\subsubsection{Standardized Residuals}
+
+First, we re-scale the residuals to the standardized values 
+$$d_i=\frac {e_i}{\sqrt{MS_{res}}}$$ and following [\ref{Fig3}] is the histogram of the standardized residuals.
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.4]{P1P3.png}
+\caption{Histogram of the Standardized Residuals}\label{Fig3}
+\end{figure}
+
+
+According to the histogram, the standardized residuals all fall into the interval of $[-3,3]$, but do not perfectly correspond with the normal distribution, which needs further inspection(as we did in the next section).
+
+
+
+\subsubsection{Normal Probability Plot}
+
+To check the normality assumption we constucted the normal probability plot of the residuals as follow [\ref{Fig4}]
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P4.png}
+\caption{Normal Q-Q Plot}\label{Fig4}
+\end{figure}
+
+As is seen in the graph, there is small departures from the normality. And the heavy-tailed error distributions indicates that there may be outliers that “pull" the least-squares fit too much in their direction. We may consider robust regression methods in the future processing.
+\subsubsection{Residuals against fitted values and regressors}
+
+Another way of checking model adequency is to plot the residuals (here we use {\it externally studentized residuals}) against the fitted values of the model and results are as follows[\ref{Fig5}]. 
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P5.png}
+\caption{Residuals against fitted values}\label{Fig5}
+\end{figure}
+
+The residuals can be contained in a horizontal band, which means there are no obvious model defects.
+
+Similarly, we can construct the 13 graphs of residuals against 13 regressors seperately and the result [\ref{Fig6}][\ref{Fig7}]is also similar with the previous one.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P6.png}
+\includegraphics[scale=0.5]{P1P7.png}
+\caption{Residuals against regressors}\label{Fig6}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P8.png}
+\caption{Residuals against regressors}\label{Fig7}
+\end{figure}
+
+\subsubsection{Partial Residual Plots}
+
+Addtionally, we can construct Added-Variable Plots to see the marginal effect on the target of each regressor.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P9.png}
+\includegraphics[scale=0.5]{P1P10.png}
+\caption{Residuals against regressors}\label{Fig8}
+\end{figure}
+
+As is shown in the figure [\ref{Fig8}], some regressors such as {\it weight,neck,hip,forearm,abdomen,wrist} have obvious effect in this model while others don't such as{\it age and knee}.
+
+
+\subsection{Diagnostics of Leverage and Influence} \label{ch3}
+
+
+\subsubsection{Leverage Plots}
+
+Using \verb|leveragePlots| in the \verb|car| package, the leverage plots of each regressor are as follows [\ref{Fig9}].
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P11.png}
+\includegraphics[scale=0.5]{P1P12.png}
+\caption{Leverage of regressors}\label{Fig9}
+\end{figure}
+
+
+\subsubsection{Residuals V.S. Leverage} 
+
+We can also construct the plot of Residuals V.S. Leverage [\ref{Fig10}].
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P15.png}
+\caption{Residuals V.S. Leverage}\label{Fig10}
+\end{figure}
+
+\subsubsection{Cook's distance}
+
+What's more, Cook's distance is an important indicator of leverage and influence.
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P13.png}
+\caption{Cook's Distance}\label{Fig11}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P14.png}
+\caption{Cook's Distance vs Leverage}\label{Fig12}
+\end{figure}
+As is shown in graph [\ref{Fig11},\ref{Fig12}], because the maximum Cook's distance is just around $0.4$(a suggested cut-off is $1$ because $F_{0.5,p,n-p}$ is approximately equal to $1$ when $n$ is large) so there is no need to rule out any point.
+
+\subsection{Variable Transformation}\label{ch4}
+
+Then we will consider possible variable transformation to improve the model.
+
+According to the externally studentized residuals against fitted values plot [\ref{Fig5}], there is no obvious heteroscedasticity between fitted values. Also we can perform \verb|ncvtest()| to test heteroscedasticity and the result is as follows [\ref{Fig13}].
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P16.png}
+\caption{Non-Constant Variance Test}\label{Fig13}
+\end{figure}
+
+However, we can also perform Box-Cox Transform to see if there is any possible power transforms.We use the \verb|boxCox()| function from the \verb|car| package and got a graph of log-likelihood of the parameter $\lambda$[\ref{Fig21}].
+
+As the graph illustrates, the constanct transform of the parameter $1$ is within the confidence interval of $95\%$ so we can continue safely with the original model.
+
+\begin{align}
+	\text{density} = &1.156121-1.319699\times10^{-4} *\text{age }+2.377541\times10^{-4}*\text{weight}\notag\\
+	&-2.594465\times10^{-5}*\text{height}+1.071540\times10^{-3}*\text{neck} +1.168530\times10^{-5}*\text{chest}\notag\\
+	&-2.199601\times10^{-3}*\text{abdomen}+5.267858\times10^{-4}*\text{hip}-6.342697\times10^{-4}*\text{thigh}\notag \\ 
+    &-3.418355\times10^{-5}*\text{knee} -4.448680\times10^{-4}*\text{ankle}-4.273484\times10^{-4}*\text{biceps}\notag\\
+    & -1.040264\times10^{-3}*\text{forearm}+3.651081\times10^{-3}*\text{wrist}\label{eq2}    
+\end{align}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P24.png}
+\caption{Log-likelihood of $\lambda$}\label{Fig21}
+\end{figure}
+
+
+\subsection{Multicollinearity diagnostics and treatments}\label{ch5}
+
+\subsubsection{Variance Inflation factors}
+
+
+One way to check multicollinearity is to calculate VIFs.$$VIF_j=C_{jj}=(1-R_j^2)^{-1}$$The results are as follows[\ref{Fig14}].
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P17.png}
+\caption{VIF}\label{Fig14}
+\end{figure}
+
+Because the maximum value is $43.94$ so there exists multicollinearity.
+
+\subsubsection{Eigensystem Analysis}
+
+Then we try another way of multicollinearity diagnostics is {\bf Eigensystem Analysis} by calculating condition indices[\ref{Fig15}].
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P18.png}
+\caption{Condition Indices}\label{Fig15}
+\end{figure}
+
+Since many values of condition indices exceed 100, there exists multicollinearity.
+
+\subsubsection{Ridge Regression}
+
+To address the multicollinearity, we can use ridge regression and we use the \verb|linearRidge()| function from the \verb|ridge| package.
+
+The result is as follows [\ref{Fig16}].
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P19.png}
+\caption{Ridge Regression Model}\label{Fig16}
+\end{figure}
+
+And we get the scaled ridge regression model [\ref{eq3}]
+           
+\begin{align}
+	\text{density} = &1.119775-1.918480\times10^{-4} *\text{age}+8.416402\times 10^{-5}*\text{weight}\notag\\
+	&+3.845388\times 10^{-4}*\text{height}+1.083985\times 10^{-3}*\text{neck}-1.0832994\times 10^{-} *\text{chest}\notag\\
+	&-1.698716\times 10^{-3} *\text{abdomen}+3.273120\times 10^{-4}*\text{hip}-5.345895\times 10^{-4}*\text{thigh}\notag \\ 
+    &-4.764966\times10^{-5}*\text{knee} -2.003772\times10^{-4}*\text{ankle}-2.589640\times 10^{-4}*\text{biceps}\notag\\
+    &-9.426395\times 10^{-4}*\text{forearm}+3.845387\times10^{-3}*\text{wrist}\label{eq3}  
+\end{align}
+
+
+\subsubsection{Principal Component Regression}
+
+We use the \verb|pcr()| function in the \verb|pls| package to conduct our PCR(Principal Component Regression).
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P20.png}
+\caption{Principal Component Regression Model}\label{Fig17}
+\end{figure}
+
+To show how much each component contributes, we can use \verb|validationplot()| function[\ref{Fig19}].
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P22.png}
+\caption{MSEP}\label{Fig19}
+\end{figure}
+
+And we get the scaled Principal Component Regression Model [\ref{eq4}] using 6 components.   
+\begin{align}
+	\text{density} = &0.01187-0.0047059537 *\text{age}-0.0017569642 *\text{weight}\notag\\
+	& 0.0037269895*\text{height}+0.0026024632\text{neck}-0.0037694967*\text{chest}\notag\\
+	&-0.0052066460*\text{abdomen} -0.0032809032*\text{hip}-0.0025914377*\text{thigh}\notag \\ 
+    &-0.0036500052*\text{knee}+ 0.0012599117\text{ankle}-0.0005902094*\text{biceps}\notag\\
+    & -0.0012072402*\text{forearm}+0.0040723312*\text{wrist}\label{eq4}  
+\end{align}
+
+
+
+\subsection{Variable Selection}\label{ch6}
+
+\subsubsection{All possible regression}
+First, we try to perform all possible regression for variable selection by using the \verb|ols_all_possible()| function in the \verb|olsrr| package.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P25}
+\includegraphics[scale=0.5]{P1P26}
+\caption{All Possible Regression Results}\label{Fig22}
+\end{figure}
+
+Although it took a quite long time to calculate all the $2^{13}=8192$ combinations of variables, we can compare all possible models based on the result.
+
+Measured by the adjusted R-square, akaike information criteria, and bayesian information criteria, we finally choose 8 variables, {\it age,weight,neck,abdomen,hip,thigh,forearm,wrist}
+
+Using them as predictors, we got our reduced model(called RM1)[\ref{eq5}].
+
+  
+ \begin{align}
+density = &1.1458191899-0.0001351300*\text{age}+0.0001893056*\text{weight}+0.0010947786 *\text{neck}-0.0021502245*\text{abdomen}\notag\\&+0.0005607852*\text{hip}-0.0007324054*\text{thigh}-0.0011777856*\text{forearm}+0.0033211813*\text{wrist}\label{eq5}
+\end{align}
+
+\subsubsection{Stepwise Regression}
+
+For our model, all possible regression is feasible, however, for more variables involved, all possible regression would be impossible so we still need other methods, such as Stepwise Regression and forward/backward regression.
+
+As for Stepwise Regression, we can use the \verb|ols_step_forward_p()| function in the \verb|olsrr| package.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[scale=0.35]{P1P21.png}
+\caption{Stepwise Regression}\label{Fig18}
+\end{figure}
+                 
+As the output shows, we can just use 4 predictors {\it abdomen, weight, wrist and forearm} to construct another reduced model(called RM2)[\ref{eq6}].   
+
+ \begin{align}
+density = &1.1791672+0.0003043*\text{weight}-0.0022308*\text{abdomen}\notag\\&-0.0011152*\text{forearm}+0.0033099*\text{wrist}\label{eq6}
+\end{align}
+
+                 
+\subsubsection{Validation of variable selection}
+We can use stepwise regression for variable selection.The modified model is as follows [\ref{Fig18}].
+
+First, we perform log-likelihood ratio test between our full model and two reduced models. To do this, we use the \verb|lrtest()| function from the \verb|lmtest| package.
+
+\begin{figure}[htb]
+\centering
+\includegraphics[scale=0.5]{P1P27.png}
+\caption{log-likelihood ratio test}\label{Fig23}
+\end{figure}
+
+According to the test, there is no significant difference between the full model and reduced model 1, but there is signifant difference between the reduced model 1 and reduced model 2. So finally we adopted the RM1[\ref{eq5}].
+
+Having selected the reduced model, we can also use 10-fold cross validation method to validate the variable selection. Here we use the \verb|caret| package (the reference link is \url {https://machinelearningmastery.com/how-to-estimate-model-accuracy -in-r-using-the-caret-package/})
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P28.png}
+\caption{Cross Validation}\label{Fig24}
+\end{figure}
+
+So we can safely choose to use 8 predictors to build the final model.
+
+\subsection{Bootstraping}\label{ch7}
+
+The last step is to use bootstraping to check the reduced model [\ref{eq5}] by using the \verb|Boot()| function in \verb|car| package and then we get the final model [\ref{Fig20}].
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P23.png}
+\caption{Bootstraping}\label{Fig20}
+\end{figure}
+     
+Also we can get the confidence intervals of coefficients by boot-strapping[\ref{Fig25}].
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P1P29.png}
+\caption{Confidence Intervals of Coefficients}\label{Fig25}
+\end{figure}
+
+\section{Results}
+
+\subsection{Our Models}
+
+\begin{enumerate}
+	\item First we establish the original full model by simple linear regresstion .
+	\item Then after residual analysisand leverage and influence diagnostic we try to use Box-Cox Tranform to build a new model however it appears there is no need for variable tranformation.
+	\item Through multicollinearity diagnostics, we try to address the multicollinearity with two different approaches, Ridge Regression and Principal Component Regression(PCR).
+	\item Based on previous models, we then consider our selection of predictors.We fisrt use all possible regression and stepwise regression to eliminate some predictors and construct the reduced model. Then we use log-likelihood ratio test to test the full model and reduced model, and perform cross validation to further validate the reduced model.
+	\item The last step is to assess last model with bootstraping, through this, we get the estimated prediction standard error and confidence intervals of coefficients, thus achieving the final model.
+
+\end{enumerate}
+
+\subsection{Assessment}
+\begin{itemize}
+	\item The first model[\ref{eq1}] is easiest to build, however, is neither validated nor modified. 
+	\item After model adequency checking, we get the second model[\ref{eq2}], although we didn't perform any tranformation, but it improves a lot because of our analysis.But the model[\ref{eq2}] still have problems such as multicollinearity.
+	\item To handle this, we construct the 3rd[\ref{eq3}] and 4th model[\ref{eq4}], these two models tend to reach perfection and works well but still need to be simplified.
+	\item By two means we get 2 reduced model[\ref{eq5},\ref{eq6}] and the test result shows that the full model is too complicated and the reduced model[\ref{eq6}] is too simple so we choose model[\ref{eq5}] as our final model.
+	\item Finally we use bootstraping for a small modification to complete the final model. However, it is still far from perfect, one possible way to improve it is to maybe add some non-linear components to the regression model.
+\end{itemize}
+
+\section{Conclusion}
+
+\noindent
+
+
+In this project, we try to establish a useful model for bodyfat. It is easy to raise a model, but it is even easier to overthrow it. So the most difficult part is how to modify the model to be more sturdy.
+
+Through all of those struggle, we finally manage to set up our model. It is not so beautiful, viewed from a mathmatical prospective, but it is built and tested on the basis of practical data. 
+
+It is hard to interpret what the equation really means (maybe it doesn't have any meaning at all) but it can be of practical use even without any practical meaning.
+
+\begin{align}
+density = &1.1458191899-0.0001351300*\text{age}+0.0001893056*\text{weight}+0.0010947786 *\text{neck}-0.0021502245*\text{abdomen}\notag\\&+0.0005607852*\text{hip}-0.0007324054*\text{thigh}-0.0011777856*\text{forearm}+0.0033211813*\text{wrist}\notag
+\end{align}
+
+The conclusion sounds boring, but it takes much work to comes to it, maybe that is why it is more like empirical rather than theoretical work.
+\end{document}  
+
+
+
+

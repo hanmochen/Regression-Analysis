@@ -1,0 +1,402 @@
+\documentclass[11pt]{article}
+\usepackage{geometry} 
+\usepackage{hyperref} 
+\usepackage{amsmath}    
+\usepackage{indentfirst} 
+\usepackage[table,xcdraw]{xcolor}
+\setlength{\parindent}{2em}
+
+\geometry{a3paper}                 
+\usepackage{graphicx}
+\graphicspath{{/Users/chm/OneDrive/SF2930/Resources/}}
+\usepackage{amssymb, amsmath}
+\usepackage{epstopdf}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{Report II - SF2930 Regression Analysis}
+\author{Chen Hanmo, 990904-T072}
+
+\date{10 March, 2019}
+
+\hypersetup{
+colorlinks=true,
+linkcolor=black
+}
+
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+
+\section{Introduction}
+
+\subsection{Background} 
+
+In Sweden, most of the vehicles are required by law to have a third part liability insurance. Many tractor owners complement this legally required insurance with an insurance covering vehicle damage to their own tractor.
+
+And the insurance company must find a way of the insurance pricing because different tractors usually have different risks, thus leading to different insurance prices.
+
+\subsection{Goals}
+
+In general, we are tring to develop a price model like this
+\begin{equation}
+	\text{price}_i=\gamma_0\prod_{k=0}^M \gamma_{k,i}
+\end{equation} 
+in which $\gamma_0$ is the base price level and $\gamma_{k,i},k=1,2,\cdots,M,i=1,2,\cdots,n$ are the risk factors corresponding to variable number $k$ and variable group number $i$. 
+
+What we need to do is 
+\begin{enumerate}
+	\item {\bf Grouping and risk differentiation}
+	\begin{itemize}
+		\item Seperate the tractors into several groups. For each group, the risk can be seen to be {\bf homogeneous}.
+		\item Perform {\bf Likelihood Ratio Test} to the division of groups.
+		\item Use GLM in different groups to generate the specifit risk factor $\gamma_{k,i}$
+	\end{itemize}
+
+	\item{\bf Calculate the basic level $\gamma_0$}
+	\begin{itemize}
+		\item Use the history data to estimate the expected claim cost.
+		\item Use the specifit risk factor $\gamma_{k,i}$ to calculate the total risk factor
+		\item Use the expected claim cost and total risk factor to find the basic level $\gamma_0$.
+	\end{itemize}
+	
+\end{enumerate}
+
+The whole model-builing process is illstrated in the follwing flow chart[\ref{Fig1}].
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.4]{P2P1.png}
+\caption{the model-building process}\label{Fig1}
+\end{figure}
+
+\section{Model Development}
+\subsection{The division of Groups} 
+
+First, we need to determine the number of groups we want to divide into. There are two considerations:
+
+\begin{itemize}
+	\item If we divide them into too many groups, there must be some groups containing less than 5 (maybe even none) individuals, which is not approriate for the following GLM regression because it may increase the error.
+	\item If we divide them into too few groups, the risk factor in each group will differ greatly and would violate the "risk homogeneous" condition.
+\end{itemize}
+
+
+After these two considerations, we think $4\sim 8$  groups of each variable is preferable as a trade-off.\newline
+
+Then we should determine what variables to use. The dataset contains {\it RiskYear, VehicleAge, Weight, Climate, ActivityCode, Duration, NoOfClaims, ClaimCost}.
+
+\begin{itemize}
+	\item We first rule out the {\it RiskYear}  variable under the assumption that the claim costs don't vary much with time. If we should take time as a factor, it may be concerned with the subject of Time Series Analysis, which isn't our focus in this project.
+	\item The {\it NoOfClaims} variable is also a factor to be considered. We have tried different ways of handles this, like dividing the claim costs by the number of claims to get a mean claim cost, or to just view one single tractors with several claims as several tractors which have only one claim. 
+	\item The {\it Duration} variable is similar with the {\it NoOfClaims}. They will certainly influence the claim costs, however, we think it should be considered in the final pricing model but not the original factor model.
+\end{itemize}
+
+Due to those reasons, We finally use the {\it VehicleAge, Weight, Climate, ActivityCode} variable as our factors.\newline
+
+Then we will discuss different methods of division.
+
+
+\subsubsection{The original method}\label{ch1}
+
+The original code gives a simple method of dividing.
+
+\begin{itemize}
+	\item {\bf 4 VehicleAge Groups}: 0-2 years; 3-5 years; 6-14 years;$\geqslant 15$ years.
+	\item {\bf 6 Weight Groups}: 0-999 kg; 1000-1999 kg; 2000-2999 kg; 3000-3999 kg; 4000-4999 kg; $\geqslant5000$ kg.
+	\item {\bf Climate and ActivityCode Groups} is divided in the natural way. 
+\end{itemize}
+
+It is simple and just works out fine.
+
+\subsubsection{Using the \texorpdfstring{$k-$} qquantiles}
+
+The basic idea of this method is to split the tractors into $k$ groups with (almost) the same size, that's why we use the {$k-$} quantiles.
+
+For example, if you want to divide the tractors into 5 groups by vehicle age or weight,
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.4]{P2P2.png}
+\caption{Divided by $k-$ quantiles}\label{Fig2}
+\end{figure}
+
+Thus the division is,
+
+\begin{itemize}
+	\item {\bf 5 VehicleAge Groups}: 0-2 years; 3-5 years; 6-10 years;11-19 years;$\geqslant 20$ years.
+	\item {\bf 5 Weight Groups}: 0-453 kg; 454-999 kg; 1000-2329 kg; 2330-3829 kg;  $\geqslant3800$ kg.
+	\item {\bf Climate and ActivityCode Groups} is divided in the natural way. 
+\end{itemize}
+
+It improves slightly from the original method, however, although it ensures that it is equally split in one dimention, when divided by different variables, there would be groups that contain few and even none tractors, which is a problem.
+
+\subsubsection{The minmax theorm}
+
+The last method concentrates on controlling the size of groups, and this and the following method will concentrate on how to make individuals inside each group {\bf risk homogeneous}.
+
+One indicator of the difference between individuals inside the group is the {\bf variance} or {\bf the sum of squared errors(SST)}. So our job is to control the SST of each group as low as possible, or to control the maximum SST within the group of all groups as low as possible. Using the min-max theorm, to achieve this, we can set all groups' SST within the group to be equal, given the group number k. 
+
+For example, if we want to divide them into 5 groups by weight,
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.4]{P2P3.png}
+\caption{the minmax method}\label{Fig3}
+\end{figure}
+
+and it is the same working with {\it VehicleAge}. Using this method, we get division like this:
+
+\begin{itemize}
+	\item {\bf 5 VehicleAge Groups}: 0-2 years; 3-5 years; 6-8 years;9-10 years;$\geqslant 11$ years.
+	\item {\bf 5 Weight Groups}: 0-2601 kg;2602-3829 kg;3830-4169kg; 4170-5829;$\geqslant5830$ kg.
+	\item {\bf Climate and ActivityCode Groups} is divided in the natural way. 
+\end{itemize}
+
+
+\subsubsection{The Otsu's method}
+
+This method comes from the digital image processing, is used to automatically perform clustering-based image thresholding. However, in this project, we can use this method to find the threshold of our .
+
+In Otsu's method, we use the exhausive search for the threshold that minimizes the intra-class variance (the variance within the class), defined as a weighted sum of variances of the two classes:
+
+\begin{equation}
+	\sigma_w^2=\omega_0\sigma_0^2+\omega_1\sigma^2_1
+\end{equation}
+where weights $\omega_{0}$ and  $\omega_{1}$ are the probabilities of the two classes separated by a threshold $t$ ,and   $\sigma _{0}^{2}$ and  $\sigma _{1}^{2}$ are variances of these two classes.
+
+Otsu shows that minimizing the intra-class variance is the same as maximizing inter-class variance:
+
+\begin{equation}
+	\sigma_b^2=\sigma_T^2-\sigma_w^2=\omega_0\omega_1(\mu_0-\mu_1)^2
+\end{equation}
+where $\sigma_b^2$ is the inter-class variance and $\sigma_t^2$ is the total variance in the whole group.
+
+Following this method, we can divide our group into two subgroups to minimize the intra-class variance(or) maximizing inter-class variance.But the limit of the Otsu's method is that it can only divide the group into two subgroups. But we can apply this to the subgroup again to get 4,8,and more groups.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P2P4.png}
+\caption{The Otsu's method}\label{Fig4}
+\end{figure}
+
+And we perform two more times like this, we can get four groups divided.We can also do the same to the {\it VehicleAge}.
+
+\begin{itemize}
+	\item {\bf 4 VehicleAge Groups}: 0-4 years; 5-11 years; 12-18 years;$\geqslant 19$ years.
+	\item {\bf 4 Weight Groups}: 0-999 kg;1000-3680 kg;3681-6150kg;$\geqslant 6151$ kg.
+	\item {\bf Climate and ActivityCode Groups} is divided in the natural way. 
+\end{itemize}
+
+
+\subsection{The test of division methods}
+
+
+After the division, we got $4$ models for different division methods. here we are going to test how good does the model fits the data. We named the 4 model as model, model2, model3 and model4, and then using different criteria to test them.
+
+\subsubsection{Log Likelihood}
+Using \verb|logLik()| function in R, we found the log likehood of 4 models in Table {\ref{Table1}}
+\begin{table}[!htbp]
+\centering
+
+\begin{tabular}{cc}
+\rowcolor[HTML]{9B9B9B} 
+{\color[HTML]{FFFFFF} Methods} & {\color[HTML]{FFFFFF} log Likelihood} \\
+Model & -608.2747\\
+\rowcolor[HTML]{EFEFEF} Model2 & -578.8223\\
+Model3&  -601.0832\\
+\rowcolor[HTML]{EFEFEF}Model4 & -462.6472  
+\end{tabular}
+\caption{Log likelihood of 4 models} 
+\label{Table1}                
+\end{table}
+
+From this perspective, we can say that the Otsu's method (method 4) does improve the goodness the model fits the data.
+
+\subsubsection{Akaike information criterion}
+
+We can also use the Akaike Information Criterion (AIC) to test if our model should be simplified.
+
+\begin{equation}
+	\text{AIC}=2k-2\log(\hat{\mathcal{L}})
+\end{equation}
+where $k$ is the number of parameters in the model and $\mathcal{L} $ is the maximum likelihood (ML) estimate of the GLM.
+
+To calculate this, we use the \verb|AIC()| function in R. The result is listed in Table {\ref{Table2}}.
+
+\begin{table}[!htbp]
+\centering
+\begin{tabular}{ll}
+\rowcolor[HTML]{9B9B9B} 
+{\color[HTML]{FFFFFF} Methods} & {\color[HTML]{FFFFFF} AIC value} \\
+Model & 1258.549\\
+\rowcolor[HTML]{EFEFEF} 
+Model2 & 1199.645\\
+Model3& 1244.166\\
+\rowcolor[HTML]{EFEFEF}
+Model4 & 963.2945
+\end{tabular}
+\caption{AIC values of 4 models}
+\label{Table2}                
+\end{table}
+
+Because the smaller AIC is, the better the model is, we can say that model 4 perform better.
+
+
+\subsubsection{Bayesian information criterion}
+
+Because method 4 performs better in AIC test, we can continue with the Bayesian information criterion(BIC) test.
+
+\begin{equation}
+	\text{AIC}=\log(n)\cdot k-2\log(\hat{\mathcal{L}})
+\end{equation}
+where $n$ is the number of observations,$k$ is the number of parameters in the model and $\mathcal{L} $ is the maximum likelihood (ML) estimate of the GLM.
+
+\begin{table}[!htbp]
+\centering
+\begin{tabular}{ll}
+\rowcolor[HTML]{9B9B9B} 
+{\color[HTML]{FFFFFF} Methods} & {\color[HTML]{FFFFFF} AIC value} \\
+Model & 1354.917\\
+\rowcolor[HTML]{EFEFEF} 
+Model2 & 1297.137\\
+Model3& 1340.389\\
+\rowcolor[HTML]{EFEFEF}
+Model4 & 1042.91
+\end{tabular}
+\caption{BIC values of 4 models}
+\label{Table3}                
+\end{table}
+
+Considering the log likelihood, the AIC and BIC values, the Otsu's method is a good way of dividing. And our final model is based on that method.
+
+
+\subsection{The test of variable selection}
+
+After the test of dividing method, we should test the variable selection. In this section, we try to remove some variables to see which model is better.
+
+\subsubsection{Remove the ActivityCode}
+
+We try to remove the ActivityCode and get the Reduced Model(RM, the model5), and compare it to the full model(FM,the model4) using likelihood ratio test.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P2P5.png}
+\caption{Frequency test}\label{Fig5}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P2P6.png}
+\caption{Severity test}\label{Fig6}
+\end{figure}
+
+
+As the result[\ref{Fig5},\ref{Fig6}] shows, because the $\chi^2$ statistic is large than the given we can safely use the full model.
+
+\subsubsection{Remove the Climate}
+
+We try to remove the ActivityCode and get the Reduced Model(RM, the model6), and compare it to the full model(FM,the model4) using likelihood ratio test.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P2P7.png}
+\caption{FM V.S. RM}\label{Fig7}
+\end{figure}
+
+As the result[\ref{Fig7}] shows, the climate's effect on the number of claims is not significant but it has significant influence on the severity, so we have to keep it as a factor.
+
+\subsection{Determine the basic level}
+
+\subsubsection{Estimate the expected claim cost}
+First, we get claim costs divided by the duration to get a whole year's estimate cost.
+
+
+Then we sum every year's estimate claim cost and use a simple linear regression between costs and time.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P2P8.png}
+\caption{The linear model between time and costs}
+\label{Fig8}
+\end{figure}
+
+It seems that the linear regresstion model is poor so we just use the mean of the past 11 years claim cost as 2017's estimate claim cost, and the total sum of tractors’ premium should be $2375151/0.9=2639057$
+
+
+\subsubsection{Find the total risk factor}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.5]{P2P9.png}
+\caption{Calculate the total risk factor}
+\label{Fig9}
+\end{figure}
+
+And we calculate every year's sum of total risk factors and etimate 2017's sum of total risk to be $37048$.
+
+
+\section{Results}
+
+\subsection{The factors}
+The risk factors we obtain are listed in Table {\ref{Table4}}
+% Table generated by Excel2LaTeX from sheet 'Sheet1'
+\begin{table}[!h]
+  \centering
+
+    \begin{tabular}{ll}
+    Groups     & \multicolumn{1}{l}{Risk Factors} \\
+    01\_ $>$1000kg & 1 \\
+    02\_1000-3680years & 3.226021 \\
+    03\_3681-6150years & 10.89426 \\
+    04\_ $>$6151years & 22.18261 \\
+    Middle & 0.674267 \\
+    North & 1.086456 \\
+    South & 1 \\
+    A - Agriculture, Hunting and Forestry & 1.025265 \\
+    C - Mining and quarrying & 1.06995 \\
+    F - Construction & 2.895707 \\
+    G - Wholesale \& retail trade; repair of motor vehicles, household & 2.61727 \\
+    H - Hotels and restaurants & 1.382193 \\
+    I - Transport, storage and communication & 0.60966 \\
+    L - Public administration and defence; compulsory social security & 1.223695 \\
+    M - Education & 0.60734 \\
+    Missing & 1 \\
+    N - Health and social work & 2.550046 \\
+    Other & 1.182008 \\
+    01\_$<$5years & 1.533029 \\
+    02\_5-11years & 1 \\
+    03\_12-18years & 0.659524 \\
+    04\_$>=$19years & 0.328926 \\
+    \end{tabular}%
+  \caption{Risk Factors}
+  \label{Table4}%
+\end{table}%
+
+
+\subsection{The basic level}
+
+The basic level is
+
+\begin{equation}
+	\gamma_0=2639057\div 37048=71.233453898
+\end{equation}
+\section{Conclusion}
+
+In this project, we try to develop a model for risk management and pricing. The core of the pricing model is to use GLM for estimating the risk factors.
+
+We develop 4 methods of dividing, and then use log likelihood, AIC and BIC to choose the best model. The Otsu's method we adopt comes from the image processing field, and it is interesting that it works well in this project,too.
+
+Then, to verify our variable selection, we use likelihood ratio test for the full model and reduced model, which proves that the full model is favorable.
+
+Finally we do some work of calculation to find the basic level which completes the model.
+
+\end{document}  
+
+
+
+
